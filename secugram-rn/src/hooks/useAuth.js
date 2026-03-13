@@ -13,7 +13,21 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   // session = { token, userId, username, expiresAt }
 
+  const DEMO_CREDENTIALS = { username: 'alice_dupont', password: 'demo1234' };
+
   const login = useCallback(async (username, password) => {
+    // Compte démo intégré — fonctionne sans backend
+    if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
+      const sess = {
+        token:     'demo_jwt_token_abc123xyz',
+        userId:    'u1',
+        username:  'alice_dupont',
+        expiresAt: Date.now() + 3600 * 1000,
+        isDemo:    true,
+      };
+      setSession(sess);
+      return sess;
+    }
     const data = await API.login(username, password);
     const sess = {
       token:     data.token,
@@ -47,6 +61,7 @@ export function AuthProvider({ children }) {
       userId:    'u1',
       username:  'alice_dupont',
       expiresAt: Date.now() + 3600 * 1000,
+      isDemo:    true,
     });
   }, []);
 

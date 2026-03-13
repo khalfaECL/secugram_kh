@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { Radius, Spacing } from '../theme';
-import { PrimaryButton, SecondaryButton, SectionLabel, Chip, Avatar, ErrorBox } from '../components/UI';
+import { PrimaryButton, SecondaryButton, SectionLabel, Chip, Avatar, ErrorBox } from './UI';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import * as API from '../api';
@@ -16,16 +16,17 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
   const { session } = useAuth();
   const { colors } = useTheme();
 
-  const [step,     setStep]     = useState(STEPS.IMAGE);
-  const [image,    setImage]    = useState(null);
-  const [desc,     setDesc]     = useState('');
-  const [selected, setSelected] = useState([]);
-  const [progress, setProgress] = useState(0);
-  const [error,    setError]    = useState('');
+  const [step,       setStep]       = useState(STEPS.IMAGE);
+  const [image,      setImage]      = useState(null);
+  const [desc,       setDesc]       = useState('');
+  const [selected,   setSelected]   = useState([]);
+  const [progress,   setProgress]   = useState(0);
+  const [error,      setError]      = useState('');
+  const [uploadedId, setUploadedId] = useState(null);
 
   const reset = () => {
     setStep(STEPS.IMAGE); setImage(null); setDesc('');
-    setSelected([]); setProgress(0); setError('');
+    setSelected([]); setProgress(0); setError(''); setUploadedId(null);
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -46,18 +47,25 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
   const handleUpload = async () => {
     setError('');
     setStep(STEPS.UPLOADING);
+    const imageId = `img_${Date.now()}`;
+    const progressInterval = setInterval(() => {
+      setProgress(p => Math.min(p + 8, 90));
+    }, 200);
     try {
-      const imageId = `img_${Date.now()}`;
-      const progressInterval = setInterval(() => {
-        setProgress(p => Math.min(p + 8, 90));
-      }, 200);
-      await API.uploadPhoto(session.token, { imageData: image.base64, imageId, description: desc });
-      if (selected.length > 0) await API.authorizePhoto(session.token, imageId, selected);
+      if (session.isDemo) {
+        // Mode démo : simulation locale, pas d'appel API
+        await new Promise(r => setTimeout(r, 1800));
+      } else {
+        await API.uploadPhoto(session.token, { imageData: image.base64, imageId, description: desc });
+        if (selected.length > 0) await API.authorizePhoto(session.token, imageId, selected);
+      }
       clearInterval(progressInterval);
       setProgress(100);
       await new Promise(r => setTimeout(r, 400));
+      setUploadedId(imageId);
       setStep(STEPS.DONE);
     } catch (e) {
+      clearInterval(progressInterval);
       setError(e.message || "Erreur lors de l'upload.");
       setStep(STEPS.AUTH);
     }
@@ -118,10 +126,49 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
     </ScrollView>
   );
 
+  const [manualInput, setManualInput] = React.useState('');
+
+  const addManualUser = () => {
+    const u = manualInput.trim().toLowerCase();
+    if (!u || selected.includes(u)) { setManualInput(''); return; }
+    setSelected(s => [...s, u]);
+    setManualInput('');
+  };
+
   const renderAuthStep = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
       <SectionLabel label="Qui peut voir cette image ?"/>
       <ErrorBox message={error}/>
+
+      {/* Invite manuelle par identifiant */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: colors.surface, borderRadius: Radius.lg,
+        borderWidth: 1, borderColor: colors.border,
+        paddingHorizontal: 14, paddingVertical: 10, marginBottom: 14,
+      }}>
+        <TextInput
+          style={{ flex: 1, fontSize: 14, color: colors.textPri }}
+          placeholder="Ajouter par identifiant..."
+          placeholderTextColor={colors.textMut}
+          value={manualInput}
+          onChangeText={setManualInput}
+          autoCapitalize="none"
+          autoCorrect={false}
+          onSubmitEditing={addManualUser}
+          returnKeyType="done"
+        />
+        <TouchableOpacity
+          style={{
+            backgroundColor: manualInput.trim() ? colors.accent : colors.border,
+            borderRadius: Radius.sm, paddingHorizontal: 14, paddingVertical: 6,
+          }}
+          onPress={addManualUser} disabled={!manualInput.trim()}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>+</Text>
+        </TouchableOpacity>
+      </View>
+
       {selected.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
           {selected.map(u => <Chip key={u} label={u} onRemove={() => toggleUser(u)}/>)}
@@ -213,7 +260,14 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
         {selected.map(u => <Chip key={u} label={u}/>)}
       </View>
-      <PrimaryButton label="Parfait !" icon="✓" onPress={() => { onSuccess(); handleClose(); }} style={{ marginTop: 28, width: '100%' }}/>
+      <PrimaryButton
+        label="Parfait !" icon="✓"
+        onPress={() => {
+          onSuccess({ imageId: uploadedId, uri: image?.uri, description: desc, authorized: selected });
+          handleClose();
+        }}
+        style={{ marginTop: 28, width: '100%' }}
+      />
     </View>
   );
 

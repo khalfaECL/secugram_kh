@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { Radius } from '../theme';
@@ -32,12 +32,12 @@ function Field({ placeholder, value, onChangeText, secureTextEntry, keyboardType
 }
 
 export default function LoginScreen() {
-  const { login, register, demoLogin } = useAuth();
+  const { login, register } = useAuth();
   const { colors, isDark } = useTheme();
   const [tab,      setTab]      = useState('login');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('alice_dupont');
   const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('demo1234');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
@@ -129,12 +129,27 @@ export default function LoginScreen() {
           <Field placeholder="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry colors={colors}/>
         </View>
 
+        {/* Hint identifiants */}
+        {tab === 'login' && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+            gap: 6, marginBottom: 16,
+          }}>
+            <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New' }}>
+              Compte de test :
+            </Text>
+            <Text style={{ fontSize: 10, color: colors.accent, fontFamily: 'Courier New' }}>
+              alice_dupont / demo1234
+            </Text>
+          </View>
+        )}
+
         {/* CTA */}
         <TouchableOpacity
           style={{
             backgroundColor: colors.accent, borderRadius: Radius.xl,
             paddingVertical: 17, alignItems: 'center', justifyContent: 'center',
-            marginBottom: 32, opacity: loading ? 0.55 : 1,
+            opacity: loading ? 0.55 : 1,
             shadowColor: colors.accent, shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.5, shadowRadius: 20, elevation: 12,
           }}
@@ -148,25 +163,7 @@ export default function LoginScreen() {
           }
         </TouchableOpacity>
 
-        {/* Demo shortcut */}
-        <TouchableOpacity
-          style={{
-            marginBottom: 20, paddingVertical: 13,
-            borderRadius: Radius.xl, borderWidth: 1.5,
-            borderColor: colors.accent, borderStyle: 'dashed',
-            alignItems: 'center',
-          }}
-          onPress={demoLogin} activeOpacity={0.8}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.accent }}>
-            ▶  Accès démo instantané
-          </Text>
-          <Text style={{ fontSize: 10, color: colors.textSec, marginTop: 2, fontFamily: 'Courier New' }}>
-            alice_dupont · session simulée
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={{ textAlign: 'center', fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1 }}>
+        <Text style={{ textAlign: 'center', fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1, marginTop: 28 }}>
           🔐  JWT · AES-256 · Aucun stockage local
         </Text>
       </View>

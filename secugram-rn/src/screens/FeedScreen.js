@@ -14,11 +14,25 @@ const MOCK_PHOTOS = [
     image_id: 'img_001', owner_username: 'alice_dupont',
     description: 'Vacances Nice 2025 🌊', date_creation: '26 fév.',
     locked: true, authorized: ['bob_martin', 'charlie_durand'],
+    preview_uri: 'https://picsum.photos/seed/beach/800/800',
   },
   {
-    image_id: 'img_002', owner_username: 'alice_dupont',
+    image_id: 'img_002', owner_username: 'bob_martin',
     description: 'Réunion équipe Lyon ☕', date_creation: '1 mars',
-    locked: false, authorized: ['charlie_durand', 'dave_leclerc', 'emma_rousseau'],
+    locked: false, authorized: ['alice_dupont', 'charlie_durand', 'emma_rousseau'],
+    preview_uri: 'https://picsum.photos/seed/city/800/800',
+  },
+  {
+    image_id: 'img_003', owner_username: 'charlie_durand',
+    description: 'Randonnée Vercors 🌲', date_creation: '3 mars',
+    locked: true, authorized: ['alice_dupont', 'dave_leclerc'],
+    preview_uri: 'https://picsum.photos/seed/forest/800/800',
+  },
+  {
+    image_id: 'img_004', owner_username: 'emma_rousseau',
+    description: 'Week-end Chamonix ⛰️', date_creation: '8 mars',
+    locked: false, authorized: ['alice_dupont', 'bob_martin', 'felix_moreau'],
+    preview_uri: 'https://picsum.photos/seed/mountain/800/800',
   },
 ];
 
@@ -169,6 +183,13 @@ export default function FeedScreen() {
   const [showUpload, setShowUpload] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (session.isDemo) {
+      setPhotos(MOCK_PHOTOS);
+      setUsers(MOCK_USERS);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const [photosData, usersData] = await Promise.all([
         API.fetchMyPhotos(session.token),
@@ -260,7 +281,20 @@ export default function FeedScreen() {
       <UploadModal
         visible={showUpload}
         onClose={() => setShowUpload(false)}
-        onSuccess={() => { setShowUpload(false); loadData(); }}
+        onSuccess={({ imageId, uri, description, authorized }) => {
+          const newPhoto = {
+            image_id: imageId,
+            owner_username: session.username,
+            description,
+            date_creation: "À l'instant",
+            locked: true,
+            authorized,
+            preview_uri: uri,
+          };
+          setPhotos(prev => [newPhoto, ...prev]);
+          setShowUpload(false);
+          if (!session.isDemo) loadData();
+        }}
         users={users}
       />
     </View>
