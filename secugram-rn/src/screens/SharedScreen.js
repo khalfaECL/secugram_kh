@@ -11,18 +11,24 @@ const MOCK_SHARED = [
     description: 'Conférence Paris 2025 📊',
     date_shared: '15 fév. 2025',
     preview_uri: 'https://picsum.photos/seed/conf/800/800',
+    ephemeralDuration: 5, maxViews: 2,
+    blocked: true,
   },
   {
     image_id: 'img_011', owner_username: 'chammakhi_malak',
     description: 'Soirée équipe 🎉',
     date_shared: '22 fév. 2025',
     preview_uri: 'https://picsum.photos/seed/party/800/800',
+    ephemeralDuration: 7, maxViews: 3,
+    blocked: false,
   },
   {
     image_id: 'img_012', owner_username: 'krid_amani',
     description: 'Prototype V2 🔧',
     date_shared: '5 mars 2025',
     preview_uri: 'https://picsum.photos/seed/tech/800/800',
+    ephemeralDuration: 10, maxViews: 1,
+    blocked: false,
   },
 ];
 
@@ -107,7 +113,7 @@ function EphemeralViewer({ photo, onClose, colors, durationSec }) {
 
 // ── Info Modal (avant accès) ──────────────────────────────────────────────────
 
-function InfoModal({ photo, onClose, onAccess, colors, ephemeralDuration }) {
+function InfoModal({ photo, onClose, onAccess, colors, accessStatus }) {
   if (!photo) return null;
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -141,40 +147,70 @@ function InfoModal({ photo, onClose, onAccess, colors, ephemeralDuration }) {
 
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPri, marginBottom: 6 }}>{photo.description}</Text>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: colors.accentDim, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{photo.owner_username[0].toUpperCase()}</Text>
+          {/* Owner + stats row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: colors.accentDim, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{photo.owner_username[0].toUpperCase()}</Text>
+              </View>
+              <Text style={{ fontSize: 13, color: colors.textSec }}>
+                De <Text style={{ fontWeight: '600', color: colors.textPri }}>{photo.owner_username}</Text>
+                {'  ·  '}
+                <Text style={{ fontFamily: 'Courier New' }}>{photo.date_shared}</Text>
+              </Text>
             </View>
-            <Text style={{ fontSize: 13, color: colors.textSec }}>
-              De <Text style={{ fontWeight: '600', color: colors.textPri }}>{photo.owner_username}</Text>
-              {'  ·  '}
-              <Text style={{ fontFamily: 'Courier New' }}>{photo.date_shared}</Text>
-            </Text>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <View style={{ backgroundColor: colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255,107,0,0.2)' }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent, fontFamily: 'Courier New' }}>⏱{photo.ephemeralDuration}s</Text>
+              </View>
+              <View style={{ backgroundColor: colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255,107,0,0.2)' }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent, fontFamily: 'Courier New' }}>👁{accessStatus?.count ?? 0}/{photo.maxViews}</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={{
-            backgroundColor: 'rgba(255,107,0,0.07)', borderWidth: 1,
-            borderColor: 'rgba(255,107,0,0.2)', borderRadius: Radius.md,
-            padding: 12, marginBottom: 20,
-          }}>
-            <Text style={{ fontSize: 11, color: colors.accent, fontFamily: 'Courier New', lineHeight: 18 }}>
-              ⏱  Affichage éphémère — {ephemeralDuration} secondes{'\n'}
-              👁  Votre accès sera enregistré{'\n'}
-              🚫  Aucune copie locale
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.accent, borderRadius: Radius.xl,
-              paddingVertical: 15, alignItems: 'center',
-              shadowColor: colors.accent, shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.4, shadowRadius: 14, elevation: 8,
-            }}
-            onPress={onAccess}
-          >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Accéder à l'image</Text>
-          </TouchableOpacity>
+          {/* Status-based bottom section */}
+          {accessStatus?.reason === 'blocked' ? (
+            <View style={{ backgroundColor: 'rgba(255,69,58,0.08)', borderWidth: 1, borderColor: 'rgba(255,69,58,0.3)', borderRadius: Radius.md, padding: 16, alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 28 }}>🚫</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.danger, textAlign: 'center' }}>Accès suspendu</Text>
+              <Text style={{ fontSize: 11, color: colors.textSec, fontFamily: 'Courier New', lineHeight: 18, textAlign: 'center' }}>
+                Le propriétaire a détecté un accès non autorisé{'\n'}via filigrane numérique.{'\n'}L'image est temporairement bloquée.
+              </Text>
+            </View>
+          ) : accessStatus?.reason === 'quota' ? (
+            <View style={{ backgroundColor: 'rgba(255,69,58,0.08)', borderWidth: 1, borderColor: 'rgba(255,69,58,0.3)', borderRadius: Radius.md, padding: 16, alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 28 }}>🔢</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.danger, textAlign: 'center' }}>Quota atteint</Text>
+              <Text style={{ fontSize: 11, color: colors.textSec, fontFamily: 'Courier New', lineHeight: 18, textAlign: 'center' }}>
+                Vous avez atteint la limite de {accessStatus.max} visualisation{accessStatus.max > 1 ? 's' : ''}{'\n'}autorisée{accessStatus.max > 1 ? 's' : ''} par le propriétaire.
+              </Text>
+            </View>
+          ) : accessStatus?.reason === 'cooldown' ? (
+            <View style={{ backgroundColor: 'rgba(255,149,0,0.08)', borderWidth: 1, borderColor: 'rgba(255,149,0,0.3)', borderRadius: Radius.md, padding: 16, alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 28 }}>⏳</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#FF9500', textAlign: 'center' }}>Accès temporairement indisponible</Text>
+              <Text style={{ fontSize: 11, color: colors.textSec, fontFamily: 'Courier New', lineHeight: 18, textAlign: 'center' }}>
+                Délai entre deux accès non écoulé.{'\n'}Réessayez dans {accessStatus.remainMin} min.
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={{ backgroundColor: 'rgba(255,107,0,0.07)', borderWidth: 1, borderColor: 'rgba(255,107,0,0.2)', borderRadius: Radius.md, padding: 12, marginBottom: 20 }}>
+                <Text style={{ fontSize: 11, color: colors.accent, fontFamily: 'Courier New', lineHeight: 18 }}>
+                  ⏱  Affichage éphémère — {photo.ephemeralDuration} secondes{'\n'}
+                  👁  Votre accès sera enregistré{'\n'}
+                  🚫  Aucune copie locale
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={{ backgroundColor: colors.accent, borderRadius: Radius.xl, paddingVertical: 15, alignItems: 'center', shadowColor: colors.accent, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 14, elevation: 8 }}
+                onPress={onAccess}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Accéder à l'image</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -184,14 +220,33 @@ function InfoModal({ photo, onClose, onAccess, colors, ephemeralDuration }) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function SharedScreen() {
-  const { colors, ephemeralDuration } = useTheme();
-  const [photos] = useState(MOCK_SHARED);
-  const [selected, setSelected] = useState(null);   // info modal
-  const [viewing, setViewing]   = useState(null);   // ephemeral viewer
-  const [accessed, setAccessed] = useState([]);
+  const { colors, viewCooldown } = useTheme();
+  const [photos]       = useState(MOCK_SHARED);
+  const [selected, setSelected]     = useState(null);
+  const [viewing,  setViewing]      = useState(null);
+  const [viewCount,    setViewCount]    = useState({});   // { imageId: number }
+  const [lastViewedAt, setLastViewedAt] = useState({});   // { imageId: timestamp }
+
+  const getAccessStatus = (item) => {
+    if (item.blocked) return { ok: false, reason: 'blocked' };
+    const count = viewCount[item.image_id] ?? 0;
+    if (count >= item.maxViews) return { ok: false, reason: 'quota', count, max: item.maxViews };
+    const last = lastViewedAt[item.image_id];
+    if (last) {
+      const elapsedMs = Date.now() - last;
+      const cooldownMs = viewCooldown * 60 * 1000;
+      if (elapsedMs < cooldownMs) {
+        const remainMin = Math.ceil((cooldownMs - elapsedMs) / 60000);
+        return { ok: false, reason: 'cooldown', remainMin };
+      }
+    }
+    return { ok: true, count, max: item.maxViews };
+  };
 
   const handleAccess = () => {
-    setAccessed(a => [...new Set([...a, selected.image_id])]);
+    const id = selected.image_id;
+    setViewCount(c => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+    setLastViewedAt(t => ({ ...t, [id]: Date.now() }));
     setViewing(selected);
     setSelected(null);
   };
@@ -209,22 +264,27 @@ export default function SharedScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const wasAccessed = accessed.includes(item.image_id);
+          const count = viewCount[item.image_id] ?? 0;
+          const wasAccessed = count > 0;
+          const remaining = item.maxViews - count;
           return (
             <TouchableOpacity
               style={{
                 flexDirection: 'row', alignItems: 'center',
-                backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: item.blocked ? 'rgba(255,69,58,0.3)' : colors.border,
                 borderRadius: Radius.lg, marginHorizontal: 16, marginBottom: 12, overflow: 'hidden',
+                opacity: item.blocked ? 0.75 : 1,
               }}
               onPress={() => setSelected(item)} activeOpacity={0.85}
             >
-              {/* Placeholder chiffré — pas d'aperçu avant accès */}
               <View style={{
-                width: 80, height: 80, backgroundColor: '#080810',
+                width: 80, height: 80,
+                backgroundColor: item.blocked ? 'rgba(255,69,58,0.08)' : '#080810',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 22 }}>🔒</Text>
+                <Text style={{ fontSize: 22 }}>{item.blocked ? '🚫' : '🔒'}</Text>
               </View>
 
               <View style={{ flex: 1, padding: 12 }}>
@@ -238,13 +298,24 @@ export default function SharedScreen() {
               </View>
 
               <View style={{ paddingRight: 14, alignItems: 'center', gap: 4 }}>
-                {wasAccessed ? (
+                {item.blocked ? (
                   <View style={{
-                    backgroundColor: 'rgba(0,207,255,0.1)', borderRadius: Radius.full,
+                    backgroundColor: 'rgba(255,69,58,0.1)', borderRadius: Radius.full,
                     paddingHorizontal: 8, paddingVertical: 3,
-                    borderWidth: 1, borderColor: 'rgba(0,207,255,0.2)',
+                    borderWidth: 1, borderColor: 'rgba(255,69,58,0.3)',
                   }}>
-                    <Text style={{ fontSize: 9, color: colors.cyan, fontFamily: 'Courier New' }}>VU</Text>
+                    <Text style={{ fontSize: 9, color: colors.danger, fontFamily: 'Courier New' }}>BLOQUÉ</Text>
+                  </View>
+                ) : wasAccessed ? (
+                  <View style={{
+                    backgroundColor: remaining > 0 ? 'rgba(0,207,255,0.1)' : 'rgba(255,69,58,0.1)',
+                    borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 3,
+                    borderWidth: 1,
+                    borderColor: remaining > 0 ? 'rgba(0,207,255,0.2)' : 'rgba(255,69,58,0.3)',
+                  }}>
+                    <Text style={{ fontSize: 9, fontFamily: 'Courier New', color: remaining > 0 ? colors.cyan : colors.danger }}>
+                      {remaining > 0 ? `${remaining} RESTANT` : 'ÉPUISÉ'}
+                    </Text>
                   </View>
                 ) : (
                   <View style={{
@@ -252,7 +323,7 @@ export default function SharedScreen() {
                     paddingHorizontal: 8, paddingVertical: 3,
                     borderWidth: 1, borderColor: 'rgba(255,107,0,0.25)',
                   }}>
-                    <Text style={{ fontSize: 9, color: colors.accent, fontFamily: 'Courier New' }}>NOUVEAU</Text>
+                    <Text style={{ fontSize: 9, color: colors.accent, fontFamily: 'Courier New' }}>{item.maxViews}× DISPO</Text>
                   </View>
                 )}
                 <Text style={{ fontSize: 18, color: colors.textSec }}>›</Text>
@@ -281,7 +352,7 @@ export default function SharedScreen() {
           onClose={() => setSelected(null)}
           onAccess={handleAccess}
           colors={colors}
-          ephemeralDuration={ephemeralDuration}
+          accessStatus={getAccessStatus(selected)}
         />
       )}
 
@@ -290,7 +361,7 @@ export default function SharedScreen() {
           photo={viewing}
           onClose={() => setViewing(null)}
           colors={colors}
-          durationSec={ephemeralDuration}
+          durationSec={viewing.ephemeralDuration ?? 5}
         />
       )}
     </View>

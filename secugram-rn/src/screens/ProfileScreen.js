@@ -112,7 +112,7 @@ function ReadOnlyRow({ label, value, green, colors }) {
 
 export default function ProfileScreen() {
   const { session, logout } = useAuth();
-  const { colors, isDark, toggleTheme, ephemeralDuration, setEphemeralDuration, EPHEMERAL_MIN, EPHEMERAL_MAX } = useTheme();
+  const { colors, isDark, toggleTheme, viewCooldown, setViewCooldown, COOLDOWN_MIN, COOLDOWN_MAX } = useTheme();
 
   const [displayName, setDisplayName] = useState(session?.username ?? '');
   const [email,       setEmail]       = useState('alice@secugram.io');
@@ -245,7 +245,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Durée d'affichage éphémère */}
+        {/* Intervalle entre visualisations */}
         <View style={{
           backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
           borderRadius: Radius.lg, padding: 14,
@@ -253,10 +253,10 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <View>
               <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textPri, marginBottom: 2 }}>
-                ⏱  Affichage éphémère
+                🕐  Intervalle entre vues
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSec }}>
-                Durée de visibilité des images partagées
+                Délai minimum entre deux accès à la même image
               </Text>
             </View>
             <View style={{
@@ -265,52 +265,50 @@ export default function ProfileScreen() {
               borderWidth: 1, borderColor: 'rgba(255,107,0,0.25)',
             }}>
               <Text style={{ fontSize: 16, fontWeight: '800', color: colors.accent }}>
-                {ephemeralDuration}s
+                {viewCooldown}min
               </Text>
             </View>
           </View>
 
-          {/* Stepper */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <TouchableOpacity
               style={{
                 width: 40, height: 40, borderRadius: Radius.md,
-                backgroundColor: ephemeralDuration <= EPHEMERAL_MIN ? colors.surface : colors.accent,
+                backgroundColor: viewCooldown <= COOLDOWN_MIN ? colors.surface : colors.accent,
                 alignItems: 'center', justifyContent: 'center',
-                borderWidth: 1, borderColor: ephemeralDuration <= EPHEMERAL_MIN ? colors.border : colors.accent,
+                borderWidth: 1, borderColor: viewCooldown <= COOLDOWN_MIN ? colors.border : colors.accent,
               }}
-              onPress={() => setEphemeralDuration(ephemeralDuration - 1)}
-              disabled={ephemeralDuration <= EPHEMERAL_MIN}
+              onPress={() => setViewCooldown(viewCooldown - 1)}
+              disabled={viewCooldown <= COOLDOWN_MIN}
               activeOpacity={0.8}
             >
-              <Text style={{ fontSize: 20, fontWeight: '700', color: ephemeralDuration <= EPHEMERAL_MIN ? colors.textMut : '#fff' }}>−</Text>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: viewCooldown <= COOLDOWN_MIN ? colors.textMut : '#fff' }}>−</Text>
             </TouchableOpacity>
 
-            {/* Barre graduée */}
             <View style={{ flex: 1, height: 6, backgroundColor: colors.surface, borderRadius: 3, overflow: 'hidden' }}>
               <View style={{
                 height: '100%', borderRadius: 3, backgroundColor: colors.accent,
-                width: `${((ephemeralDuration - EPHEMERAL_MIN) / (EPHEMERAL_MAX - EPHEMERAL_MIN)) * 100}%`,
+                width: `${((viewCooldown - COOLDOWN_MIN) / (COOLDOWN_MAX - COOLDOWN_MIN)) * 100}%`,
               }}/>
             </View>
 
             <TouchableOpacity
               style={{
                 width: 40, height: 40, borderRadius: Radius.md,
-                backgroundColor: ephemeralDuration >= EPHEMERAL_MAX ? colors.surface : colors.accent,
+                backgroundColor: viewCooldown >= COOLDOWN_MAX ? colors.surface : colors.accent,
                 alignItems: 'center', justifyContent: 'center',
-                borderWidth: 1, borderColor: ephemeralDuration >= EPHEMERAL_MAX ? colors.border : colors.accent,
+                borderWidth: 1, borderColor: viewCooldown >= COOLDOWN_MAX ? colors.border : colors.accent,
               }}
-              onPress={() => setEphemeralDuration(ephemeralDuration + 1)}
-              disabled={ephemeralDuration >= EPHEMERAL_MAX}
+              onPress={() => setViewCooldown(viewCooldown + 1)}
+              disabled={viewCooldown >= COOLDOWN_MAX}
               activeOpacity={0.8}
             >
-              <Text style={{ fontSize: 20, fontWeight: '700', color: ephemeralDuration >= EPHEMERAL_MAX ? colors.textMut : '#fff' }}>+</Text>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: viewCooldown >= COOLDOWN_MAX ? colors.textMut : '#fff' }}>+</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', textAlign: 'center', marginTop: 10 }}>
-            Spectre autorisé : {EPHEMERAL_MIN}s — {EPHEMERAL_MAX}s
+            Spectre autorisé : {COOLDOWN_MIN}min — {COOLDOWN_MAX}min
           </Text>
         </View>
       </View>

@@ -17,6 +17,8 @@ const MOCK_MY_PHOTOS = [
     date_creation: '26 fév. 2025',
     preview_uri: 'https://picsum.photos/seed/beach/400/400',
     authorized: ['khakfa_youssef', 'chammakhi_malak'], access_count: 3,
+    ephemeralDuration: 5, maxViews: 2,
+    blocked: true,
     history: [
       { viewer: 'khakfa_youssef',   date: '2 mars · 14h23', type: 'app' },
       { viewer: 'chammakhi_malak',  date: '4 mars · 09h11', type: 'app' },
@@ -28,6 +30,7 @@ const MOCK_MY_PHOTOS = [
     date_creation: '3 mars 2025',
     preview_uri: 'https://picsum.photos/seed/forest/400/400',
     authorized: ['krid_amani'], access_count: 1,
+    ephemeralDuration: 8, maxViews: 1,
     history: [
       { viewer: 'krid_amani', date: '5 mars · 11h30', type: 'app' },
     ],
@@ -36,7 +39,7 @@ const MOCK_MY_PHOTOS = [
     image_id: 'img_003', description: 'Conférence Lyon ☕',
     date_creation: '8 mars 2025',
     preview_uri: 'https://picsum.photos/seed/city/400/400',
-    authorized: [], access_count: 0, history: [],
+    authorized: [], access_count: 0, ephemeralDuration: 5, maxViews: 3, history: [],
   },
 ];
 
@@ -44,7 +47,7 @@ const KNOWN_USERS = ['khakfa_youssef', 'chammakhi_malak', 'agrebi_marwane', 'kri
 
 // ── Photo Detail Modal ────────────────────────────────────────────────────────
 
-function PhotoDetailModal({ photo, visible, onClose, onDelete, onUpdateAuthorized, colors }) {
+function PhotoDetailModal({ photo, visible, onClose, onDelete, onUpdateAuthorized, onToggleBlock, colors }) {
   const [newUser, setNewUser] = useState('');
   const [authorized, setAuthorized] = useState(photo?.authorized ?? []);
   const [tab, setTab] = useState('auth'); // 'auth' | 'history'
@@ -109,6 +112,26 @@ function PhotoDetailModal({ photo, visible, onClose, onDelete, onUpdateAuthorize
             {/* Auth tab */}
             {tab === 'auth' && (
               <View>
+                {/* Security params — read-only */}
+                <View style={{
+                  flexDirection: 'row', gap: 10, marginBottom: 16,
+                }}>
+                  <View style={{
+                    flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+                    borderRadius: Radius.md, padding: 10, alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1, marginBottom: 4 }}>DURÉE</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: colors.accent }}>{photo.ephemeralDuration ?? 5}s</Text>
+                  </View>
+                  <View style={{
+                    flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+                    borderRadius: Radius.md, padding: 10, alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1, marginBottom: 4 }}>MAX VUES</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: colors.accent }}>{photo.maxViews ?? 3}×</Text>
+                  </View>
+                </View>
+
                 <Text style={{ fontSize: 10, color: colors.textSec, fontFamily: 'Courier New', letterSpacing: 2, marginBottom: 12 }}>
                   PERSONNES AUTORISÉES
                 </Text>
@@ -236,10 +259,42 @@ function PhotoDetailModal({ photo, visible, onClose, onDelete, onUpdateAuthorize
               </View>
             )}
 
+            {/* Block status */}
+            {photo.blocked && (
+              <View style={{
+                marginTop: 20, padding: 14,
+                backgroundColor: 'rgba(255,69,58,0.07)',
+                borderWidth: 1, borderColor: 'rgba(255,69,58,0.25)',
+                borderRadius: Radius.md,
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.danger, marginBottom: 6 }}>
+                  🚫  Accès suspendu
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSec, fontFamily: 'Courier New', lineHeight: 18 }}>
+                  Un accès via filigrane numérique a été détecté.{'\n'}
+                  L'image est bloquée pour tous les autorisés.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={{
+                marginTop: 12, paddingVertical: 14, borderRadius: Radius.xl,
+                backgroundColor: photo.blocked ? 'rgba(48,209,88,0.07)' : 'rgba(255,69,58,0.07)',
+                borderWidth: 1, borderColor: photo.blocked ? 'rgba(48,209,88,0.25)' : 'rgba(255,69,58,0.2)',
+                alignItems: 'center',
+              }}
+              onPress={() => onToggleBlock(photo.image_id)}
+            >
+              <Text style={{ fontWeight: '600', fontSize: 14, color: photo.blocked ? colors.success : colors.danger }}>
+                {photo.blocked ? '✓  Lever le blocage' : '🚫  Bloquer l\'accès'}
+              </Text>
+            </TouchableOpacity>
+
             {/* Delete */}
             <TouchableOpacity
               style={{
-                marginTop: 28, paddingVertical: 14, borderRadius: Radius.xl,
+                marginTop: 10, paddingVertical: 14, borderRadius: Radius.xl,
                 backgroundColor: 'rgba(255,69,58,0.07)',
                 borderWidth: 1, borderColor: 'rgba(255,69,58,0.2)',
                 alignItems: 'center',
@@ -263,16 +318,31 @@ function PhotoCard({ photo, onPress, colors }) {
       style={{
         width: CARD, backgroundColor: colors.card,
         borderRadius: Radius.lg, overflow: 'hidden',
-        borderWidth: 1, borderColor: colors.border,
+        borderWidth: 1,
+        borderColor: photo.blocked ? 'rgba(255,69,58,0.35)' : colors.border,
       }}
       onPress={() => onPress(photo)} activeOpacity={0.85}
     >
-      {photo.preview_uri
-        ? <Image source={{ uri: photo.preview_uri }} style={{ width: '100%', height: CARD, resizeMode: 'cover' }}/>
-        : <View style={{ width: '100%', height: CARD, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 28 }}>🔒</Text>
+      <View style={{ position: 'relative' }}>
+        {photo.preview_uri
+          ? <Image source={{ uri: photo.preview_uri }} style={{ width: '100%', height: CARD, resizeMode: 'cover', opacity: photo.blocked ? 0.45 : 1 }}/>
+          : <View style={{ width: '100%', height: CARD, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 28 }}>🔒</Text>
+            </View>
+        }
+        {photo.blocked && (
+          <View style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: 'rgba(255,69,58,0.15)',
+          }}>
+            <Text style={{ fontSize: 26 }}>🚫</Text>
+            <Text style={{ fontSize: 8, fontWeight: '700', color: colors.danger, fontFamily: 'Courier New', letterSpacing: 1, marginTop: 4 }}>
+              BLOQUÉ
+            </Text>
           </View>
-      }
+        )}
+      </View>
       <View style={{ padding: 10 }}>
         <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPri, marginBottom: 6 }} numberOfLines={1}>
           {photo.description}
@@ -303,6 +373,11 @@ export default function MyPhotosScreen() {
 
   const handleUpdateAuthorized = (imageId, authorized) =>
     setPhotos(p => p.map(x => x.image_id === imageId ? { ...x, authorized } : x));
+
+  const handleToggleBlock = (imageId) => {
+    setPhotos(p => p.map(x => x.image_id === imageId ? { ...x, blocked: !x.blocked } : x));
+    setSelected(s => s ? { ...s, blocked: !s.blocked } : s);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -357,19 +432,23 @@ export default function MyPhotosScreen() {
         onClose={() => setSelected(null)}
         onDelete={handleDelete}
         onUpdateAuthorized={handleUpdateAuthorized}
+        onToggleBlock={handleToggleBlock}
         colors={colors}
       />
 
       <UploadModal
         visible={showUpload}
         onClose={() => setShowUpload(false)}
-        onSuccess={({ imageId, uri, description, authorized }) => {
+        onSuccess={({ imageId, uri, description, authorized, ephemeralDuration, maxViews }) => {
           setPhotos(prev => [{
             image_id: imageId,
             description: description || 'Image sans titre',
             date_creation: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
             preview_uri: uri,
             authorized,
+            ephemeralDuration: ephemeralDuration ?? 5,
+            maxViews: maxViews ?? 3,
+            blocked: false,
             access_count: 0,
             history: [],
           }, ...prev]);

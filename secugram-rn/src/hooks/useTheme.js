@@ -3,26 +3,26 @@ import { DarkColors, LightColors } from '../theme';
 
 const ThemeCtx = createContext(null);
 
-const EPHEMERAL_MIN = 1;
-const EPHEMERAL_MAX = 10;
+const COOLDOWN_MIN = 1;   // minutes
+const COOLDOWN_MAX = 60;  // minutes
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false);
-  const [ephemeralDuration, setEphemeralDurationRaw] = useState(5); // secondes
+  const [viewCooldown, setViewCooldownRaw] = useState(10); // minutes
 
   const colors = isDark ? DarkColors : LightColors;
   const toggleTheme = () => setIsDark(d => !d);
 
-  const setEphemeralDuration = (val) => {
-    const clamped = Math.max(EPHEMERAL_MIN, Math.min(EPHEMERAL_MAX, Math.round(val)));
-    setEphemeralDurationRaw(clamped);
+  const setViewCooldown = (val) => {
+    const clamped = Math.max(COOLDOWN_MIN, Math.min(COOLDOWN_MAX, Math.round(val)));
+    setViewCooldownRaw(clamped);
   };
 
   return (
     <ThemeCtx.Provider value={{
       colors, isDark, toggleTheme,
-      ephemeralDuration, setEphemeralDuration,
-      EPHEMERAL_MIN, EPHEMERAL_MAX,
+      viewCooldown, setViewCooldown,
+      COOLDOWN_MIN, COOLDOWN_MAX,
     }}>
       {children}
     </ThemeCtx.Provider>

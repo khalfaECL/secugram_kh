@@ -16,17 +16,23 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
   const { session } = useAuth();
   const { colors } = useTheme();
 
-  const [step,       setStep]       = useState(STEPS.IMAGE);
-  const [image,      setImage]      = useState(null);
-  const [desc,       setDesc]       = useState('');
-  const [selected,   setSelected]   = useState([]);
-  const [progress,   setProgress]   = useState(0);
-  const [error,      setError]      = useState('');
-  const [uploadedId, setUploadedId] = useState(null);
+  const [step,              setStep]              = useState(STEPS.IMAGE);
+  const [image,             setImage]             = useState(null);
+  const [desc,              setDesc]              = useState('');
+  const [selected,          setSelected]          = useState([]);
+  const [progress,          setProgress]          = useState(0);
+  const [error,             setError]             = useState('');
+  const [uploadedId,        setUploadedId]        = useState(null);
+  const [ephemeralDuration, setEphemeralDuration] = useState(5);  // 1–10 s
+  const [maxViews,          setMaxViews]          = useState(3);   // 1–20
+
+  const EPHEM_MIN = 1; const EPHEM_MAX = 10;
+  const VIEWS_MIN = 1; const VIEWS_MAX = 20;
 
   const reset = () => {
     setStep(STEPS.IMAGE); setImage(null); setDesc('');
     setSelected([]); setProgress(0); setError(''); setUploadedId(null);
+    setEphemeralDuration(5); setMaxViews(3);
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -211,6 +217,119 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
         ItemSeparatorComponent={() => <View style={{ height: 8 }}/>}
         style={{ marginBottom: 20 }}
       />
+      {/* ── Paramètres de sécurité ── */}
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 10, color: colors.textSec, fontFamily: 'Courier New', letterSpacing: 2, marginBottom: 12 }}>
+          PARAMÈTRES DE SÉCURITÉ
+        </Text>
+
+        {/* Ephemeral duration */}
+        <View style={{
+          backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+          borderRadius: Radius.lg, padding: 14, marginBottom: 10,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPri }}>⏱  Durée d'affichage</Text>
+              <Text style={{ fontSize: 11, color: colors.textSec, marginTop: 2 }}>Secondes avant fermeture auto</Text>
+            </View>
+            <View style={{
+              backgroundColor: colors.accentDim, borderRadius: Radius.md,
+              paddingHorizontal: 10, paddingVertical: 4,
+              borderWidth: 1, borderColor: 'rgba(255,107,0,0.25)',
+            }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accent }}>{ephemeralDuration}s</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={{
+                width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: ephemeralDuration <= EPHEM_MIN ? colors.surface : colors.accent,
+                borderWidth: 1, borderColor: ephemeralDuration <= EPHEM_MIN ? colors.border : colors.accent,
+              }}
+              onPress={() => setEphemeralDuration(v => Math.max(EPHEM_MIN, v - 1))}
+              disabled={ephemeralDuration <= EPHEM_MIN}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '700', color: ephemeralDuration <= EPHEM_MIN ? colors.textMut : '#fff' }}>−</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1, height: 5, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' }}>
+              <View style={{
+                height: '100%', borderRadius: 3, backgroundColor: colors.accent,
+                width: `${((ephemeralDuration - EPHEM_MIN) / (EPHEM_MAX - EPHEM_MIN)) * 100}%`,
+              }}/>
+            </View>
+            <TouchableOpacity
+              style={{
+                width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: ephemeralDuration >= EPHEM_MAX ? colors.surface : colors.accent,
+                borderWidth: 1, borderColor: ephemeralDuration >= EPHEM_MAX ? colors.border : colors.accent,
+              }}
+              onPress={() => setEphemeralDuration(v => Math.min(EPHEM_MAX, v + 1))}
+              disabled={ephemeralDuration >= EPHEM_MAX}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '700', color: ephemeralDuration >= EPHEM_MAX ? colors.textMut : '#fff' }}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', textAlign: 'center', marginTop: 8 }}>
+            Spectre autorisé : {EPHEM_MIN}s — {EPHEM_MAX}s
+          </Text>
+        </View>
+
+        {/* Max views */}
+        <View style={{
+          backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+          borderRadius: Radius.lg, padding: 14,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPri }}>👁  Nb. de visualisations</Text>
+              <Text style={{ fontSize: 11, color: colors.textSec, marginTop: 2 }}>Accès autorisés par personne</Text>
+            </View>
+            <View style={{
+              backgroundColor: colors.accentDim, borderRadius: Radius.md,
+              paddingHorizontal: 10, paddingVertical: 4,
+              borderWidth: 1, borderColor: 'rgba(255,107,0,0.25)',
+            }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accent }}>{maxViews}×</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={{
+                width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: maxViews <= VIEWS_MIN ? colors.surface : colors.accent,
+                borderWidth: 1, borderColor: maxViews <= VIEWS_MIN ? colors.border : colors.accent,
+              }}
+              onPress={() => setMaxViews(v => Math.max(VIEWS_MIN, v - 1))}
+              disabled={maxViews <= VIEWS_MIN}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '700', color: maxViews <= VIEWS_MIN ? colors.textMut : '#fff' }}>−</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1, height: 5, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' }}>
+              <View style={{
+                height: '100%', borderRadius: 3, backgroundColor: colors.accent,
+                width: `${((maxViews - VIEWS_MIN) / (VIEWS_MAX - VIEWS_MIN)) * 100}%`,
+              }}/>
+            </View>
+            <TouchableOpacity
+              style={{
+                width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: maxViews >= VIEWS_MAX ? colors.surface : colors.accent,
+                borderWidth: 1, borderColor: maxViews >= VIEWS_MAX ? colors.border : colors.accent,
+              }}
+              onPress={() => setMaxViews(v => Math.min(VIEWS_MAX, v + 1))}
+              disabled={maxViews >= VIEWS_MAX}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '700', color: maxViews >= VIEWS_MAX ? colors.textMut : '#fff' }}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', textAlign: 'center', marginTop: 8 }}>
+            Limite : {VIEWS_MIN} — {VIEWS_MAX} visualisations
+          </Text>
+        </View>
+      </View>
+
       <View style={{ flexDirection: 'row', marginTop: 8, marginBottom: 8 }}>
         <SecondaryButton label="Retour" icon="←" onPress={() => setStep(STEPS.IMAGE)} style={{ flex: 0.4 }}/>
         <PrimaryButton
@@ -263,7 +382,7 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
       <PrimaryButton
         label="Parfait !" icon="✓"
         onPress={() => {
-          onSuccess({ imageId: uploadedId, uri: image?.uri, description: desc, authorized: selected });
+          onSuccess({ imageId: uploadedId, uri: image?.uri, description: desc, authorized: selected, ephemeralDuration, maxViews });
           handleClose();
         }}
         style={{ marginTop: 28, width: '100%' }}
