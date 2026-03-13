@@ -41,13 +41,22 @@ export function AuthProvider({ children }) {
     setSession(null); // efface tout de la mémoire
   }, []);
 
+  const demoLogin = useCallback(() => {
+    setSession({
+      token:     'demo_jwt_token_abc123xyz',
+      userId:    'u1',
+      username:  'alice_dupont',
+      expiresAt: Date.now() + 3600 * 1000,
+    });
+  }, []);
+
   const isTokenValid = useCallback(() => {
     if (!session) return false;
     return Date.now() < session.expiresAt;
   }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, login, register, logout, isTokenValid }}>
+    <AuthContext.Provider value={{ session, login, register, logout, demoLogin, isTokenValid }}>
       {children}
     </AuthContext.Provider>
   );

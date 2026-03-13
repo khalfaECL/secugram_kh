@@ -1,0 +1,14 @@
+# React Native dependencies
+secugram-rn/node_modules/
+
+# Android / iOS build artifacts
+secugram-rn/android/build/
+secugram-rn/android/app/build/
+secugram-rn/android/.gradle/
+secugram-rn/android/local.properties
+secugram-rn/ios/build/
+secugram-rn/ios/Pods/
+
+# Misc
+.DS_Store
+*.log

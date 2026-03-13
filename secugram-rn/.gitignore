@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+
+# Android build artifacts
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/release/
+android/*.keystore
+android/keystores/
+android/app/google-services.json
+
+# iOS build artifacts
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/Podfile.lock
+ios/*.ipa
+ios/*.dSYM.zip
+ios/*.dSYM
+ios/GoogleService-Info.plist
+
+# Metro bundler cache
+.metro-health-check*
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+
+# Gradle
+.gradle/
+build/
+captures/
+local.properties
+
+# Generated files
+*.jsbundle
+*.map
+android/app/src/main/assets/index.android.bundle
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.yarn-integrity
+
+# Web build output
+dist/
+web-build/
+
+# React Native nested init scaffold (if any)
+secugram/

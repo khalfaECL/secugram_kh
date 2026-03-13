@@ -1,25 +1,32 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, TextInput,
-  ActivityIndicator, StyleSheet, Animated,
+  ActivityIndicator, StyleSheet,
 } from 'react-native';
-import { Colors, Radius, Spacing, Typography } from '../theme';
+import { Radius, Spacing, Typography } from '../theme';
+import { useTheme } from '../hooks/useTheme';
 
-// ─── Button ─────────────────────────────────────────────────────────────────
+// ─── Button ──────────────────────────────────────────────────────────────────
 
 export function PrimaryButton({ label, onPress, loading, disabled, icon, style }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
-      style={[styles.btnPrimary, (loading || disabled) && styles.btnDisabled, style]}
-      onPress={onPress}
-      disabled={loading || disabled}
-      activeOpacity={0.85}
+      style={[{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.accent, borderRadius: Radius.lg,
+        paddingVertical: 16, paddingHorizontal: 24,
+        shadowColor: colors.accent, shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
+        opacity: (loading || disabled) ? 0.5 : 1,
+      }, style]}
+      onPress={onPress} disabled={loading || disabled} activeOpacity={0.85}
     >
       {loading
         ? <ActivityIndicator color="#fff" size="small"/>
         : <>
             {icon && <Text style={{ marginRight: 8, fontSize: 16 }}>{icon}</Text>}
-            <Text style={styles.btnPrimaryText}>{label}</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 }}>{label}</Text>
           </>
       }
     </TouchableOpacity>
@@ -27,19 +34,37 @@ export function PrimaryButton({ label, onPress, loading, disabled, icon, style }
 }
 
 export function SecondaryButton({ label, onPress, icon, style }) {
+  const { colors } = useTheme();
   return (
-    <TouchableOpacity style={[styles.btnSecondary, style]} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surface, borderRadius: Radius.md,
+        borderWidth: 1, borderColor: colors.border,
+        paddingVertical: 12, paddingHorizontal: 18,
+      }, style]}
+      onPress={onPress} activeOpacity={0.8}
+    >
       {icon && <Text style={{ marginRight: 6, fontSize: 14 }}>{icon}</Text>}
-      <Text style={styles.btnSecondaryText}>{label}</Text>
+      <Text style={{ color: colors.textPri, fontSize: 14, fontWeight: '500' }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 export function DangerButton({ label, onPress, icon }) {
+  const { colors } = useTheme();
   return (
-    <TouchableOpacity style={styles.btnDanger} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(255,69,58,0.08)', borderRadius: Radius.md,
+        borderWidth: 1, borderColor: 'rgba(255,69,58,0.25)',
+        paddingVertical: 14, paddingHorizontal: 20,
+      }}
+      onPress={onPress} activeOpacity={0.8}
+    >
       {icon && <Text style={{ marginRight: 6 }}>{icon}</Text>}
-      <Text style={styles.btnDangerText}>{label}</Text>
+      <Text style={{ color: colors.danger, fontSize: 14, fontWeight: '600' }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -47,14 +72,27 @@ export function DangerButton({ label, onPress, icon }) {
 // ─── Input ───────────────────────────────────────────────────────────────────
 
 export function InputField({ label, icon, ...props }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.fieldWrap}>
-      {label && <Text style={styles.fieldLabel}>{label}</Text>}
-      <View style={styles.inputWrap}>
-        {icon && <Text style={styles.inputIcon}>{icon}</Text>}
+    <View style={{ marginBottom: 16 }}>
+      {label && (
+        <Text style={{
+          ...Typography.mono, fontSize: 10, color: colors.textSec,
+          textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6,
+        }}>{label}</Text>
+      )}
+      <View style={{ position: 'relative', justifyContent: 'center' }}>
+        {icon && (
+          <Text style={{ position: 'absolute', left: 14, fontSize: 16, zIndex: 1 }}>{icon}</Text>
+        )}
         <TextInput
-          style={[styles.input, icon && { paddingLeft: 44 }]}
-          placeholderTextColor={Colors.textMut}
+          style={{
+            backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+            borderRadius: Radius.md, paddingVertical: 14,
+            paddingHorizontal: icon ? 44 : 16,
+            color: colors.textPri, fontSize: 15,
+          }}
+          placeholderTextColor={colors.textMut}
           {...props}
         />
       </View>
@@ -65,21 +103,37 @@ export function InputField({ label, icon, ...props }) {
 // ─── Card ────────────────────────────────────────────────────────────────────
 
 export function Card({ children, style }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const { colors } = useTheme();
+  return (
+    <View style={[{
+      backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+      borderRadius: Radius.xl, overflow: 'hidden',
+    }, style]}>
+      {children}
+    </View>
+  );
 }
 
 // ─── Badge ───────────────────────────────────────────────────────────────────
 
 export function Badge({ label, type = 'default' }) {
-  const typeStyle = {
-    success: { bg: 'rgba(46,204,113,.12)', text: Colors.success, border: 'rgba(46,204,113,.25)' },
-    locked:  { bg: 'rgba(255,71,87,.12)',  text: Colors.danger,  border: 'rgba(255,71,87,.25)' },
-    accent:  { bg: 'rgba(91,142,255,.12)', text: Colors.accent,  border: 'rgba(91,142,255,.25)' },
-    default: { bg: Colors.surface,         text: Colors.textSec, border: Colors.border },
-  }[type];
+  const { colors } = useTheme();
+  const map = {
+    success: { bg: 'rgba(50,215,75,0.12)',  text: colors.success, border: 'rgba(50,215,75,0.25)' },
+    locked:  { bg: 'rgba(255,69,58,0.12)',  text: colors.danger,  border: 'rgba(255,69,58,0.25)' },
+    accent:  { bg: colors.accentDim,        text: colors.accent,  border: 'rgba(255,107,0,0.25)' },
+    default: { bg: colors.surface,          text: colors.textSec, border: colors.border },
+  };
+  const t = map[type] || map.default;
   return (
-    <View style={[styles.badge, { backgroundColor: typeStyle.bg, borderColor: typeStyle.border }]}>
-      <Text style={[styles.badgeText, { color: typeStyle.text }]}>{label}</Text>
+    <View style={{
+      borderWidth: 1, borderRadius: 6,
+      paddingHorizontal: 8, paddingVertical: 3,
+      backgroundColor: t.bg, borderColor: t.border,
+    }}>
+      <Text style={{ ...Typography.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: t.text }}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -87,12 +141,18 @@ export function Badge({ label, type = 'default' }) {
 // ─── Chip ────────────────────────────────────────────────────────────────────
 
 export function Chip({ label, onRemove }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.chip}>
-      <Text style={styles.chipText}>{label}</Text>
+    <View style={{
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: colors.accentDim, borderWidth: 1,
+      borderColor: 'rgba(255,107,0,0.2)', borderRadius: 20,
+      paddingHorizontal: 10, paddingVertical: 4,
+    }}>
+      <Text style={{ ...Typography.mono, fontSize: 11, color: colors.accent }}>{label}</Text>
       {onRemove && (
         <TouchableOpacity onPress={onRemove} style={{ marginLeft: 4 }}>
-          <Text style={[styles.chipText, { fontSize: 14 }]}>×</Text>
+          <Text style={{ fontSize: 14, color: colors.accent }}>×</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -102,9 +162,13 @@ export function Chip({ label, onRemove }) {
 // ─── Avatar ──────────────────────────────────────────────────────────────────
 
 export function Avatar({ initials, size = 40, radius = 13 }) {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: radius }]}>
-      <Text style={[styles.avatarText, { fontSize: size * 0.35 }]}>{initials}</Text>
+    <View style={{
+      width: size, height: size, borderRadius: radius,
+      backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.35 }}>{initials}</Text>
     </View>
   );
 }
@@ -112,10 +176,13 @@ export function Avatar({ initials, size = 40, radius = 13 }) {
 // ─── SectionLabel ────────────────────────────────────────────────────────────
 
 export function SectionLabel({ label }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.sectionRow}>
-      <Text style={styles.sectionText}>{label}</Text>
-      <View style={styles.sectionLine}/>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+      <Text style={{ ...Typography.mono, fontSize: 10, color: colors.textSec, textTransform: 'uppercase', letterSpacing: 1.5, marginRight: 10 }}>
+        {label}
+      </Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: colors.border }}/>
     </View>
   );
 }
@@ -123,163 +190,15 @@ export function SectionLabel({ label }) {
 // ─── ErrorBox ────────────────────────────────────────────────────────────────
 
 export function ErrorBox({ message }) {
+  const { colors } = useTheme();
   if (!message) return null;
   return (
-    <View style={styles.errorBox}>
-      <Text style={styles.errorText}>⚠  {message}</Text>
+    <View style={{
+      backgroundColor: 'rgba(255,69,58,0.08)', borderWidth: 1,
+      borderColor: 'rgba(255,69,58,0.2)', borderRadius: Radius.sm,
+      padding: 12, marginBottom: 14,
+    }}>
+      <Text style={{ color: colors.danger, fontSize: 13 }}>⚠  {message}</Text>
     </View>
   );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  // Buttons
-  btnPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.lg,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  btnDisabled: { opacity: 0.5 },
-  btnPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  btnSecondary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  btnSecondaryText: { color: Colors.textPri, fontSize: 14, fontWeight: '500' },
-  btnDanger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,71,87,.08)',
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,71,87,.25)',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  btnDangerText: { color: Colors.danger, fontSize: 14, fontWeight: '600' },
-
-  // Input
-  fieldWrap: { marginBottom: 16 },
-  fieldLabel: {
-    ...Typography.mono,
-    fontSize: 10,
-    color: Colors.textSec,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 6,
-  },
-  inputWrap: { position: 'relative', justifyContent: 'center' },
-  inputIcon: {
-    position: 'absolute',
-    left: 14,
-    fontSize: 16,
-    zIndex: 1,
-  },
-  input: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: Colors.textPri,
-    fontSize: 15,
-  },
-
-  // Card
-  card: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
-  },
-
-  // Badge
-  badge: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    ...Typography.mono,
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Chip
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(91,142,255,.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(91,142,255,.2)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  chipText: {
-    ...Typography.mono,
-    fontSize: 11,
-    color: Colors.accent,
-  },
-
-  // Avatar
-  avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.accent,
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-
-  // Section label
-  sectionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  sectionText: {
-    ...Typography.mono,
-    fontSize: 10,
-    color: Colors.textSec,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginRight: 10,
-  },
-  sectionLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-
-  // Error
-  errorBox: {
-    backgroundColor: 'rgba(255,71,87,.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,71,87,.2)',
-    borderRadius: Radius.sm,
-    padding: 12,
-    marginBottom: 14,
-  },
-  errorText: { color: Colors.danger, fontSize: 13 },
-});

@@ -1,15 +1,39 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar,
 } from 'react-native';
-import { Colors, Radius, Spacing } from '../theme';
-import { PrimaryButton, InputField, ErrorBox } from '../components/UI';
+import { Radius } from '../theme';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
+
+function Field({ placeholder, value, onChangeText, secureTextEntry, keyboardType, colors }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      style={[{
+        backgroundColor: colors.surface, borderRadius: Radius.xl,
+        paddingVertical: 16, paddingHorizontal: 20,
+        fontSize: 15, color: colors.textPri,
+        borderWidth: 1, borderColor: colors.border,
+      }, focused && { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
+      placeholder={placeholder}
+      placeholderTextColor={colors.textMut}
+      value={value}
+      onChangeText={onChangeText}
+      secureTextEntry={secureTextEntry}
+      keyboardType={keyboardType}
+      autoCapitalize="none"
+      autoCorrect={false}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    />
+  );
+}
 
 export default function LoginScreen() {
-  const { login, register } = useAuth();
-
+  const { login, register, demoLogin } = useAuth();
+  const { colors, isDark } = useTheme();
   const [tab,      setTab]      = useState('login');
   const [username, setUsername] = useState('');
   const [email,    setEmail]    = useState('');
@@ -19,10 +43,7 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     setError('');
-    if (!username.trim() || !password.trim()) {
-      setError('Tous les champs sont requis.');
-      return;
-    }
+    if (!username.trim() || !password.trim()) { setError('Tous les champs sont requis.'); return; }
     setLoading(true);
     try {
       if (tab === 'login') {
@@ -39,163 +60,116 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.bg }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg}/>
+      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 32 }}>
+
         {/* Logo */}
-        <View style={styles.logoZone}>
-          <View style={styles.logoIcon}>
-            <Text style={{ fontSize: 32 }}>🔒</Text>
+        <View style={{ alignItems: 'center', marginBottom: 52 }}>
+          <View style={{
+            width: 90, height: 90, borderRadius: 45,
+            borderWidth: 2, borderColor: colors.accent,
+            alignItems: 'center', justifyContent: 'center', marginBottom: 22,
+            shadowColor: colors.accent, shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.6, shadowRadius: 24, elevation: 14,
+          }}>
+            <View style={{
+              width: 74, height: 74, borderRadius: 37,
+              backgroundColor: colors.accentDim,
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Text style={{ fontSize: 30 }}>🔒</Text>
+            </View>
           </View>
-          <Text style={styles.logoName}>Secugram</Text>
-          <Text style={styles.logoTagline}>ENCRYPTED · PRIVATE · YOURS</Text>
+          <Text style={{ fontSize: 36, fontWeight: '800', color: colors.textPri, letterSpacing: -1.5, marginBottom: 8 }}>
+            Secugram
+          </Text>
+          <Text style={{ fontSize: 9, color: colors.textMut, letterSpacing: 3, fontFamily: 'Courier New' }}>
+            ENCRYPTED · PRIVATE · SECURE
+          </Text>
         </View>
 
-        {/* Tabs */}
-        <View style={styles.tabs}>
+        {/* Segment */}
+        <View style={{
+          flexDirection: 'row', backgroundColor: colors.surface,
+          borderRadius: Radius.full, padding: 3, marginBottom: 28,
+        }}>
           {['login', 'register'].map(t => (
             <TouchableOpacity
               key={t}
-              style={[styles.tab, tab === t && styles.tabActive]}
+              style={[{ flex: 1, paddingVertical: 11, borderRadius: Radius.full, alignItems: 'center' },
+                tab === t && { backgroundColor: colors.card }]}
               onPress={() => { setTab(t); setError(''); }}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: tab === t ? colors.textPri : colors.textSec }}>
                 {t === 'login' ? 'Connexion' : 'Inscription'}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <ErrorBox message={error}/>
-
-        <InputField
-          label="Nom d'utilisateur"
-          icon="👤"
-          placeholder="alice_dupont"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        {tab === 'register' && (
-          <InputField
-            label="Email"
-            icon="✉️"
-            placeholder="alice@example.com"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+        {/* Error */}
+        {!!error && (
+          <View style={{
+            backgroundColor: 'rgba(255,69,58,0.1)', borderWidth: 1,
+            borderColor: 'rgba(255,69,58,0.25)', borderRadius: Radius.md,
+            padding: 12, marginBottom: 14,
+          }}>
+            <Text style={{ color: colors.danger, fontSize: 13, textAlign: 'center' }}>{error}</Text>
+          </View>
         )}
 
-        <InputField
-          label="Mot de passe"
-          icon="🔑"
-          placeholder="••••••••"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <PrimaryButton
-          label={tab === 'login' ? 'Se connecter' : 'Créer mon compte'}
-          icon="🛡️"
-          onPress={handleSubmit}
-          loading={loading}
-          style={{ marginTop: 8 }}
-        />
-
-        {/* Security footer */}
-        <View style={styles.securityNote}>
-          <Text style={styles.securityNoteText}>
-            🔐  Token JWT · Chiffrement AES-256 · Aucun stockage local
-          </Text>
+        {/* Fields */}
+        <View style={{ gap: 10, marginBottom: 18 }}>
+          <Field placeholder="Nom d'utilisateur" value={username} onChangeText={setUsername} colors={colors}/>
+          {tab === 'register' && (
+            <Field placeholder="Adresse email" value={email} onChangeText={setEmail} keyboardType="email-address" colors={colors}/>
+          )}
+          <Field placeholder="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry colors={colors}/>
         </View>
-      </ScrollView>
+
+        {/* CTA */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: colors.accent, borderRadius: Radius.xl,
+            paddingVertical: 17, alignItems: 'center', justifyContent: 'center',
+            marginBottom: 32, opacity: loading ? 0.55 : 1,
+            shadowColor: colors.accent, shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.5, shadowRadius: 20, elevation: 12,
+          }}
+          onPress={handleSubmit} disabled={loading} activeOpacity={0.88}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" size="small"/>
+            : <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 }}>
+                {tab === 'login' ? 'Se connecter' : 'Créer mon compte'}
+              </Text>
+          }
+        </TouchableOpacity>
+
+        {/* Demo shortcut */}
+        <TouchableOpacity
+          style={{
+            marginBottom: 20, paddingVertical: 13,
+            borderRadius: Radius.xl, borderWidth: 1.5,
+            borderColor: colors.accent, borderStyle: 'dashed',
+            alignItems: 'center',
+          }}
+          onPress={demoLogin} activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.accent }}>
+            ▶  Accès démo instantané
+          </Text>
+          <Text style={{ fontSize: 10, color: colors.textSec, marginTop: 2, fontFamily: 'Courier New' }}>
+            alice_dupont · session simulée
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={{ textAlign: 'center', fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1 }}>
+          🔐  JWT · AES-256 · Aucun stockage local
+        </Text>
+      </View>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: Spacing.lg,
-  },
-
-  // Logo
-  logoZone: { alignItems: 'center', marginBottom: 40 },
-  logoIcon: {
-    width: 72, height: 72,
-    backgroundColor: Colors.accent,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  logoName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: Colors.accent,
-    letterSpacing: -1,
-    marginBottom: 4,
-  },
-  logoTagline: {
-    fontSize: 10,
-    color: Colors.textSec,
-    letterSpacing: 2.5,
-    fontFamily: 'Courier New',
-  },
-
-  // Tabs
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: 4,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tab: {
-    flex: 1, paddingVertical: 10,
-    borderRadius: 9,
-    alignItems: 'center',
-  },
-  tabActive: {
-    backgroundColor: Colors.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tabText: { fontSize: 14, fontWeight: '500', color: Colors.textSec },
-  tabTextActive: { color: Colors.textPri },
-
-  // Footer
-  securityNote: {
-    marginTop: 28,
-    alignItems: 'center',
-  },
-  securityNoteText: {
-    fontSize: 11,
-    color: Colors.textMut,
-    fontFamily: 'Courier New',
-    textAlign: 'center',
-  },
-});

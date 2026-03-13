@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Colors, Radius } from '../theme';
+import { Radius } from '../theme';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 
 import LoginScreen   from '../screens/LoginScreen';
 import FeedScreen    from '../screens/FeedScreen';
@@ -11,27 +12,35 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-// ── Custom Tab Bar ────────────────────────────────────────────────────────────
+// ── Tab Bar ───────────────────────────────────────────────────────────────────
 
-function CustomTabBar({ state, descriptors, navigation }) {
+function TabBar({ state, navigation }) {
+  const { colors } = useTheme();
   const TABS = [
-    { name: 'Feed',    icon: '🏠', label: 'Galerie' },
-    { name: 'Profile', icon: '👤', label: 'Profil'  },
+    { name: 'Feed',    label: 'Galerie', icon: '⊞', iconOn: '⊟' },
+    { name: 'Profile', label: 'Profil',  icon: '○', iconOn: '●' },
   ];
   return (
-    <View style={styles.tabBar}>
+    <View style={{
+      flexDirection: 'row', backgroundColor: colors.bg,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border,
+      paddingBottom: Platform.OS === 'ios' ? 24 : 8, paddingTop: 10,
+    }}>
       {TABS.map((t, i) => {
-        const focused = state.index === i;
+        const active = state.index === i;
         return (
-          <TouchableOpacity
-            key={t.name}
-            style={styles.tabItem}
-            onPress={() => navigation.navigate(t.name)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{t.icon}</Text>
-            <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{t.label}</Text>
-            {focused && <View style={styles.tabDot}/>}
+          <TouchableOpacity key={t.name} style={{ flex: 1, alignItems: 'center', gap: 4 }} onPress={() => navigation.navigate(t.name)} activeOpacity={0.7}>
+            <View style={{
+              width: 40, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.sm,
+              backgroundColor: active ? colors.accentDim : 'transparent',
+            }}>
+              <Text style={{ fontSize: 20, color: active ? colors.accent : colors.textSec }}>
+                {active ? t.iconOn : t.icon}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 10, color: active ? colors.accent : colors.textSec, fontWeight: active ? '600' : '400', letterSpacing: 0.3 }}>
+              {t.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -42,34 +51,62 @@ function CustomTabBar({ state, descriptors, navigation }) {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ username }) {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const initials = (username || 'U').slice(0, 2).toUpperCase();
   return (
-    <View style={styles.header}>
-      <Text style={styles.headerLogo}>Secugram</Text>
-      <View style={styles.headerRight}>
-        <Text style={styles.headerUsername}>{username}</Text>
-        <View style={styles.headerAvatar}>
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-            {(username || 'U').slice(0, 2).toUpperCase()}
-          </Text>
+    <View style={{
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingTop: Platform.OS === 'android' ? 14 : 0,
+      paddingBottom: 12,
+      backgroundColor: colors.bg,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    }}>
+      <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPri, letterSpacing: -0.8 }}>
+        Secugram
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* Theme toggle */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: colors.surface, borderRadius: Radius.full,
+            paddingHorizontal: 12, paddingVertical: 6,
+            borderWidth: 1, borderColor: colors.border,
+          }}
+          onPress={toggleTheme} activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 13 }}>{isDark ? '☀️' : '🌙'}</Text>
+        </TouchableOpacity>
+
+        {/* Avatar */}
+        <View style={{
+          width: 34, height: 34, borderRadius: 17,
+          borderWidth: 2, borderColor: colors.accent,
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: colors.accentDim,
+        }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>{initials}</Text>
         </View>
       </View>
     </View>
   );
 }
 
-// ── App Navigator ─────────────────────────────────────────────────────────────
+// ── Navigator ─────────────────────────────────────────────────────────────────
 
 export default function AppNavigator() {
   const { session } = useAuth();
+  const { colors } = useTheme();
 
   if (!session) return <LoginScreen/>;
 
   return (
     <NavigationContainer>
-      <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <Header username={session.username}/>
         <Tab.Navigator
-          tabBar={props => <CustomTabBar {...props}/>}
+          tabBar={props => <TabBar {...props}/>}
           screenOptions={{ headerShown: false }}
         >
           <Tab.Screen name="Feed"    component={FeedScreen}/>
@@ -79,55 +116,3 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 12 : 0,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(10,11,15,.96)',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerLogo: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.accent,
-    letterSpacing: -0.5,
-  },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerUsername: { fontSize: 12, color: Colors.textSec, fontFamily: 'Courier New' },
-  headerAvatar: {
-    width: 36, height: 36,
-    backgroundColor: Colors.accent,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Tab bar
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(17,19,24,.97)',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-    paddingTop: 8,
-  },
-  tabItem: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 4 },
-  tabIcon: { fontSize: 22, opacity: 0.4 },
-  tabIconActive: { opacity: 1 },
-  tabLabel: { fontSize: 10, color: Colors.textMut, fontFamily: 'Courier New', letterSpacing: 0.5 },
-  tabLabelActive: { color: Colors.accent },
-  tabDot: {
-    position: 'absolute',
-    bottom: -4,
-    width: 4, height: 4,
-    backgroundColor: Colors.accent,
-    borderRadius: 2,
-  },
-});
