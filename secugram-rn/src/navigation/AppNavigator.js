@@ -11,11 +11,115 @@ import HistoryScreen  from '../screens/HistoryScreen';
 import ProfileScreen  from '../screens/ProfileScreen';
 
 const TABS = [
-  { label: 'Mes images', icon: '📁', title: 'Mes images' },
-  { label: 'Partagées',  icon: '🔐', title: 'Partagées avec moi' },
-  { label: 'Historique', icon: '📋', title: 'Historique' },
-  { label: 'Profil',     icon: '👤', title: 'Mon profil' },
+  { label: 'Mes images', type: 'images',  title: 'Mes images' },
+  { label: 'Partagées',  type: 'shared',  title: 'Partagées avec moi' },
+  { label: 'Historique', type: 'history', title: 'Historique' },
+  { label: 'Profil',     type: 'profile', title: 'Mon profil' },
 ];
+
+// ── Tab icons — pure View geometry, no emoji ───────────────────────────────
+
+function TabIcon({ type, color, size = 20 }) {
+  const sq = Math.round(size * 0.42);
+  if (type === 'images') {
+    return (
+      <View style={{ width: size, height: size, justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ width: sq, height: sq, borderRadius: 2.5, backgroundColor: color }}/>
+          <View style={{ width: sq, height: sq, borderRadius: 2.5, backgroundColor: color }}/>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ width: sq, height: sq, borderRadius: 2.5, backgroundColor: color }}/>
+          <View style={{ width: sq, height: sq, borderRadius: 2.5, backgroundColor: color }}/>
+        </View>
+      </View>
+    );
+  }
+  if (type === 'shared') {
+    // Lock silhouette: arch + body
+    return (
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <View style={{
+          width: size * 0.48, height: size * 0.34,
+          borderTopWidth: Math.ceil(size * 0.14),
+          borderLeftWidth: Math.ceil(size * 0.14),
+          borderRightWidth: Math.ceil(size * 0.14),
+          borderTopLeftRadius: size * 0.24,
+          borderTopRightRadius: size * 0.24,
+          borderColor: color,
+          marginBottom: -1,
+        }}/>
+        <View style={{
+          width: size * 0.78, height: size * 0.46,
+          backgroundColor: color, borderRadius: Math.round(size * 0.1),
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <View style={{ width: size * 0.16, height: size * 0.16, borderRadius: size, backgroundColor: 'rgba(255,255,255,0.38)' }}/>
+        </View>
+      </View>
+    );
+  }
+  if (type === 'history') {
+    // Three tapering bars — timeline / log feel
+    const h = Math.round(size * 0.13);
+    return (
+      <View style={{ width: size, height: size, justifyContent: 'center', gap: Math.round(size * 0.19) }}>
+        <View style={{ width: size,        height: h, borderRadius: 4, backgroundColor: color }}/>
+        <View style={{ width: size * 0.7,  height: h, borderRadius: 4, backgroundColor: color }}/>
+        <View style={{ width: size * 0.42, height: h, borderRadius: 4, backgroundColor: color }}/>
+      </View>
+    );
+  }
+  // profile — head circle + shoulder arc
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'flex-end', gap: Math.round(size * 0.07) }}>
+      <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size, backgroundColor: color }}/>
+      <View style={{ width: size * 0.74, height: size * 0.28, borderTopLeftRadius: size * 0.37, borderTopRightRadius: size * 0.37, backgroundColor: color }}/>
+    </View>
+  );
+}
+
+// ── Brand mark — lock icon + wordmark ─────────────────────────────────────
+
+function BrandMark({ colors }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+      {/* Icon tile */}
+      <View style={{
+        width: 36, height: 36, borderRadius: 11,
+        backgroundColor: colors.accent,
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        {/* Lock shape in white */}
+        <View style={{ alignItems: 'center', justifyContent: 'flex-end', width: 20, height: 20 }}>
+          <View style={{
+            width: 10, height: 6.5,
+            borderTopWidth: 2.5, borderLeftWidth: 2.5, borderRightWidth: 2.5,
+            borderTopLeftRadius: 5, borderTopRightRadius: 5,
+            borderColor: 'rgba(255,255,255,0.95)',
+            marginBottom: -1,
+          }}/>
+          <View style={{
+            width: 15, height: 9.5, borderRadius: 2.5,
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: colors.accent }}/>
+          </View>
+        </View>
+      </View>
+      {/* Wordmark */}
+      <View>
+        <Text style={{ fontSize: 15, fontWeight: '800', color: colors.textPri, letterSpacing: 2.5, lineHeight: 18 }}>
+          SECUGRAM
+        </Text>
+        <Text style={{ fontSize: 8, fontWeight: '600', color: colors.accent, letterSpacing: 1.5 }}>
+          SECURE VAULT
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 const SCREENS = [MyPhotosScreen, SharedScreen, HistoryScreen, ProfileScreen];
 
@@ -121,7 +225,7 @@ function InfoMenuModal({ visible, onClose, colors }) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-function Header({ title, username }) {
+function Header({ username }) {
   const { colors, isDark, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = (username || 'U').slice(0, 2).toUpperCase();
@@ -136,14 +240,7 @@ function Header({ title, username }) {
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
       }}>
-        <View>
-          <Text style={{ fontSize: 10, color: colors.textMut, fontFamily: 'Courier New', letterSpacing: 1.5 }}>
-            SECUGRAM
-          </Text>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPri, letterSpacing: -0.3 }}>
-            {title}
-          </Text>
-        </View>
+        <BrandMark colors={colors}/>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
             style={{
@@ -207,7 +304,10 @@ function TabBar({ active, onPress }) {
             borderRadius: Radius.sm,
             backgroundColor: active === i ? colors.accentDim : 'transparent',
           }}>
-            <Text style={{ fontSize: 18 }}>{t.icon}</Text>
+            <TabIcon
+              type={t.type}
+              color={active === i ? colors.accent : colors.textMut}
+            />
           </View>
           <Text style={{
             fontSize: 9, letterSpacing: 0.2,
@@ -235,7 +335,7 @@ export default function AppNavigator() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <Header title={TABS[activeTab].title} username={session.username}/>
+      <Header username={session.username}/>
       <View style={{ flex: 1 }}>
         <Screen/>
       </View>
