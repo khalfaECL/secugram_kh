@@ -248,9 +248,9 @@ export default function ProfileScreen() {
         {/* Intervalle entre visualisations */}
         <View style={{
           backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-          borderRadius: Radius.lg, padding: 14,
+          borderRadius: Radius.lg, padding: 10,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <View>
               <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textPri, marginBottom: 2 }}>
                 🕐  Intervalle entre vues
@@ -261,16 +261,16 @@ export default function ProfileScreen() {
             </View>
             <View style={{
               backgroundColor: colors.accentDim, borderRadius: Radius.md,
-              paddingHorizontal: 12, paddingVertical: 5,
+              paddingHorizontal: 5, paddingVertical: 5,
               borderWidth: 1, borderColor: 'rgba(255,107,0,0.25)',
             }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.accent }}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: colors.accent }}>
                 {viewCooldown}min
               </Text>
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity
               style={{
                 width: 40, height: 40, borderRadius: Radius.md,

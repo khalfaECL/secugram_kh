@@ -153,7 +153,7 @@ export default function UploadModal({ visible, onClose, onSuccess, users }) {
   };
 
   const renderAuthStep = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
       <SectionLabel label="Qui peut voir cette image ?"/>
       <ErrorBox message={error}/>
 
