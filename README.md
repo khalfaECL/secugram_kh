@@ -1,19 +1,22 @@
-# Secugram
+# Secugram — Frontend
 
-> A privacy-first image sharing mobile app built with React Native.
-> Images are encrypted server-side with AES-256 and watermarked before storage. Sessions are ephemeral — no data is ever persisted on-device.
+Application mobile sécurisée de partage de photos éphémères.
+Les images sont chiffrées AES-256 côté serveur, tatouées avec un filigrane DCT invisible, et soumises à un contrôle d'accès strict par le propriétaire.
+
+> **Stack :** React Native 0.76 (Android) · Webpack + react-native-web (navigateur) · FastAPI + MongoDB Atlas (backend)
 
 ---
 
-## Overview
+## Fonctionnalités
 
-Secugram is a secure photo-sharing application where the owner of an image explicitly controls who can view it. The mobile frontend handles authentication and authorization flow; all cryptographic operations (AES-256 encryption + invisible watermarking) happen on the backend.
-
-**Security principles:**
-- JWT sessions stored in memory only — cleared on app close
-- No AsyncStorage, no local file cache, no credentials on device
-- Per-image access control list — each photo has an explicit list of authorized viewers
-- Images transmitted as base64 to the API; the server encrypts before storage
+- **Chiffrement AES-256** — les images sont chiffrées par le Tiers de Confiance avant stockage ; seuls les viewers autorisés reçoivent l'image déchiffrée
+- **Filigrane DCT invisible** — chaque image porte le username du déposeur, extractible pour traçabilité en cas de fuite
+- **Viewer éphémère** — l'image s'efface automatiquement après N secondes (1–10s, configurable au dépôt)
+- **Quota de vues** — nombre maximum de consultations par utilisateur autorisé (1–20, configurable au dépôt)
+- **Intervalle entre vues** — délai minimum entre deux consultations (1–60 min, configurable dans le profil)
+- **Contrôle d'accès** — liste d'autorisations par image, demande d'accès, révocation, blocage total
+- **Session éphémère** — token JWT en mémoire uniquement, jamais persisté sur le device
+- **Multi-plateforme** — même codebase pour l'app Android et la version web
 
 ---
 
@@ -22,132 +25,102 @@ Secugram is a secure photo-sharing application where the owner of an image expli
 ```
 secugram-rn/
 ├── src/
-│   ├── api/               # REST client (auth, photos, users)
+│   ├── api/index.js          # Tous les appels vers le TdC + normalisation snake→camel
+│   ├── config.js             # API_BASE_URL + timeout
 │   ├── hooks/
-│   │   ├── useAuth.js     # AuthContext — login, register, logout, demoLogin
-│   │   └── useTheme.js    # ThemeContext — light/dark toggle
-│   ├── navigation/
-│   │   └── AppNavigator.js  # Bottom tabs + auth gate
-│   ├── screens/
+│   │   ├── useAuth.js        # Session JWT (mémoire uniquement)
+│   │   └── useTheme.js       # Thème dark/light + intervalle entre vues (persisté)
+│   ├── screens/              # Écrans React Native (Android)
 │   │   ├── LoginScreen.js
 │   │   ├── FeedScreen.js
+│   │   ├── MyPhotosScreen.js
+│   │   ├── SharedScreen.js
 │   │   └── ProfileScreen.js
 │   ├── components/
-│   │   ├── UI.js            # Shared components (Button, Avatar, Chip…)
-│   │   └── UploadModal.js   # Multi-step photo upload + authorization picker
-│   └── theme/
-│       └── index.js         # DarkColors, LightColors, Radius, Spacing
-├── android/
-├── App.js
-└── package.json
+│   │   ├── UI.js
+│   │   └── UploadModal.js    # Dépôt d'image avec réglages de sécurité
+│   ├── stubs/                # Polyfills web (AsyncStorage→localStorage, etc.)
+│   └── web/pages/            # Équivalents web des écrans natifs
+├── webpack.config.js         # Build version web
+└── App.js
 ```
 
 ---
 
-## Prerequisites
+## Démarrage rapide
 
-| Tool | Version |
-|------|---------|
-| Node.js | ≥ 18 |
-| JDK | 17 (for Android builds) |
-| Android Studio | Hedgehog or newer |
-| Android SDK | API 33+ |
-| NDK | 26.x |
+### Prérequis
 
----
+- Node.js ≥ 18
+- JDK 17
+- Android Studio + Android SDK API 33+
+- ADB (inclus dans Android SDK)
 
-## Getting Started
-
-### 1. Install dependencies
+### Installation
 
 ```bash
 cd secugram-rn
 npm install
 ```
 
-### 2. Configure Android SDK path
-
-Create `secugram-rn/android/local.properties`:
-
-```
-sdk.dir=C:\Users\<YourName>\AppData\Local\Android\Sdk
-```
-
-### 3. Start Metro bundler
+### App Android (device physique)
 
 ```bash
-npm start
+# Terminal 1 — Metro bundler
+npx @react-native-community/cli start
+
+# Terminal 2 — Redirection port + lancement
+adb reverse tcp:8081 tcp:8081
+npx @react-native-community/cli run-android
 ```
 
-### 4. Run on Android
+### Version Web
 
 ```bash
-npm run android
+npx webpack serve --config webpack.config.js
+# → http://localhost:8080
 ```
 
-> **Emulator tip:** if the emulator is slow, launch it with software rendering:
-> ```
-> emulator -avd <your_avd_name> -gpu swiftshader_indirect
-> ```
+---
+
+## Mode démo
+
+Identifiants : `alice_dupont` / `demo1234`
+Aucun backend requis — données mock, aucun appel réseau.
 
 ---
 
-## API Endpoints
+## Paramètres de sécurité
 
-The frontend connects to `http://10.0.2.2:3000/api` (Android emulator alias for `localhost`).
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/login` | Authenticate, receive JWT |
-| `POST` | `/api/auth/register` | Create account, receive JWT |
-| `GET` | `/api/users` | List users (authorization picker) |
-| `GET` | `/api/photos` | Fetch current user's photo feed |
-| `POST` | `/api/photos/upload` | Upload photo (base64) → encrypted server-side |
-| `POST` | `/api/photos/:id/authorize` | Set authorized viewers for a photo |
-| `DELETE` | `/api/photos/:id` | Delete a photo |
-
-All endpoints except auth require `Authorization: Bearer <token>`.
+| Paramètre | Où le régler | Plage |
+|-----------|-------------|-------|
+| Durée d'affichage | Au dépôt | 1–10 secondes |
+| Nb de vues max | Au dépôt | 1–20 vues |
+| Intervalle entre vues | Profil utilisateur | 1–60 minutes |
 
 ---
 
-## Demo Mode
+## Backend
 
-No backend? Use the **instant demo login** on the login screen.
-
-It creates a local mock session (`alice_dupont`) without any API call, giving full access to all screens and UI flows.
-
----
-
-## Themes
-
-The app ships with both light and dark themes. Light is the default.
-Toggle via the ☀️ / 🌙 button in the app header or profile screen.
-
-| Token | Light | Dark |
-|-------|-------|------|
-| Background | `#FFFFFF` | `#000000` |
-| Accent | `#FF6B00` | `#FF6B00` |
-| Text primary | `#000000` | `#FFFFFF` |
-| Surface | `#F5F5F5` | `#0D0D0D` |
+Le backend (Tiers de Confiance) est un projet séparé : [`Serveur-TDC`](../Serveur-TDC)
+Déployé sur Render · Documentation API : `https://tdc-server.onrender.com/docs`
 
 ---
 
-## Tech Stack
+## Tech stack
 
-- **React Native** 0.76.5
-- **React Navigation** 6 — bottom tabs
-- **react-native-image-picker** — photo library access
-- **react-native-safe-area-context** / **react-native-screens**
-- JWT authentication (in-memory, no persistence)
-- AES-256 encryption (server-side, outside this repo)
+| Couche | Technologie |
+|--------|------------|
+| Mobile | React Native 0.76 |
+| Web | Webpack 5 + react-native-web |
+| Navigation | React Navigation 6 (bottom tabs) |
+| État | React Context (Auth + Theme) |
+| Persistance | AsyncStorage (cooldown uniquement) |
+| Backend | FastAPI + MongoDB Atlas (hors ce repo) |
 
 ---
 
-## License
+## Équipe
 
-KHALFA youssef
-KRID Amani
-AGREBI Marwane
-CHAMMAKHI Malek
-
-Ecole Centrale Lyon
+KHALFA Youssef · KRID Amani · AGREBI Marwane · CHAMMAKHI Malek
+École Centrale de Lyon
