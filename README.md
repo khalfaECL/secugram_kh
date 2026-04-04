@@ -1,21 +1,26 @@
 # Secugram — Frontend
 
-Application mobile sécurisée de partage de photos éphémères.
+Application de partage de photos sécurisées et éphémères.
 Les images sont chiffrées AES-256 côté serveur, tatouées avec un filigrane DCT invisible, et soumises à un contrôle d'accès strict par le propriétaire.
 
-> **Stack :** React Native 0.76 (Android) · Webpack + react-native-web (navigateur) · FastAPI + MongoDB Atlas (backend)
+> **Stack :** React Native 0.76 (Android) · Webpack 5 + react-native-web (navigateur) · FastAPI + MongoDB Atlas (backend)
+
+**Version web live :** [https://front-end-xwu4.onrender.com](https://front-end-xwu4.onrender.com)
+**API backend :** [https://tdc-server.onrender.com/docs](https://tdc-server.onrender.com/docs)
 
 ---
 
 ## Fonctionnalités
 
 - **Chiffrement AES-256** — les images sont chiffrées par le Tiers de Confiance avant stockage ; seuls les viewers autorisés reçoivent l'image déchiffrée
-- **Filigrane DCT invisible** — chaque image porte le username du déposeur, extractible pour traçabilité en cas de fuite
+- **Filigrane DCT invisible** — chaque image porte le username du viewer, extractible pour traçabilité en cas de fuite
 - **Viewer éphémère** — l'image s'efface automatiquement après N secondes (1–10s, configurable au dépôt)
 - **Quota de vues** — nombre maximum de consultations par utilisateur autorisé (1–20, configurable au dépôt)
 - **Intervalle entre vues** — délai minimum entre deux consultations (1–60 min, configurable dans le profil)
 - **Contrôle d'accès** — liste d'autorisations par image, demande d'accès, révocation, blocage total
 - **Session éphémère** — token JWT en mémoire uniquement, jamais persisté sur le device
+- **Inscription sécurisée** — validation mot de passe (8+ chars, majuscule, chiffre, caractère spécial), confirmation, unicité username
+- **Suppression de compte** — suppression complète du compte et de toutes les données associées
 - **Multi-plateforme** — même codebase pour l'app Android et la version web
 
 ---
@@ -41,6 +46,8 @@ secugram-rn/
 │   │   └── UploadModal.js    # Dépôt d'image avec réglages de sécurité
 │   ├── stubs/                # Polyfills web (AsyncStorage→localStorage, etc.)
 │   └── web/pages/            # Équivalents web des écrans natifs
+├── public/
+│   └── index.html
 ├── webpack.config.js         # Build version web
 └── App.js
 ```
@@ -51,7 +58,7 @@ secugram-rn/
 
 ### Prérequis
 
-- Node.js ≥ 18
+- Node.js 20.x
 - JDK 17
 - Android Studio + Android SDK API 33+
 - ADB (inclus dans Android SDK)
@@ -69,12 +76,11 @@ npm install
 # Terminal 1 — Metro bundler
 npx @react-native-community/cli start
 
-# Terminal 2 — Redirection port + lancement
-adb reverse tcp:8081 tcp:8081
+# Terminal 2 — Build + install
 npx @react-native-community/cli run-android
 ```
 
-### Version Web
+### Version Web (local)
 
 ```bash
 npx webpack serve --config webpack.config.js
@@ -83,10 +89,30 @@ npx webpack serve --config webpack.config.js
 
 ---
 
-## Mode démo
+## Déploiement web (Render Static Site)
 
-Identifiants : `alice_dupont` / `demo1234`
-Aucun backend requis — données mock, aucun appel réseau.
+1. Créer un **Static Site** sur [render.com](https://render.com)
+2. Connecter le repo GitHub
+3. Configurer :
+
+| Paramètre | Valeur |
+|---|---|
+| **Root Directory** | `secugram-rn` |
+| **Build Command** | `npm ci && npx webpack --config webpack.config.js --mode production` |
+| **Publish Directory** | `dist` |
+| **Node Version** | `20.x` |
+
+---
+
+## Configuration backend
+
+L'URL du backend est centralisée dans `src/config.js` :
+
+```js
+export const API_BASE_URL = 'https://tdc-server.onrender.com';
+```
+
+Remplacer par l'URL de votre propre instance si vous déployez le backend vous-même.
 
 ---
 
@@ -102,8 +128,8 @@ Aucun backend requis — données mock, aucun appel réseau.
 
 ## Backend
 
-Le backend (Tiers de Confiance) est un projet séparé : [`Serveur-TDC`](../Serveur-TDC)
-Déployé sur Render · Documentation API : `https://tdc-server.onrender.com/docs`
+Le backend (Tiers de Confiance) est un projet séparé : [khalfaECL/tdc_server](https://github.com/khalfaECL/tdc_server)
+Documentation API interactive : `https://tdc-server.onrender.com/docs`
 
 ---
 
@@ -115,7 +141,7 @@ Déployé sur Render · Documentation API : `https://tdc-server.onrender.com/doc
 | Web | Webpack 5 + react-native-web |
 | Navigation | React Navigation 6 (bottom tabs) |
 | État | React Context (Auth + Theme) |
-| Persistance | AsyncStorage (cooldown uniquement) |
+| Persistance locale | AsyncStorage (contacts, cooldown) |
 | Backend | FastAPI + MongoDB Atlas (hors ce repo) |
 
 ---
